@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Absen + Gaji Karyawan - SAAS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .kunci { filter: blur(4px); pointer-events: none; }
+</style>
+</head>
+<body class="bg-gray-100">
+
+<div id="popupKunci" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg p-6 max-w-sm text-center">
+        <h1 class="text-2xl font-bold text-red-600 mb-2">APLIKASI TERKUNCI</h1>
+        <p class="text-gray-700">Masa sewa lisensi <span id="kodeLisensiPopup"></span> sudah berakhir.</p>
+        <p class="mt-4 text-sm">Hubungi Admin: 0895351432524 untuk perpanjangan.</p>
+    </div>
+</div>
+
+<div id="app" class="max-w-4xl mx-auto p-4">
+    <div class="bg-white rounded-lg shadow p-4 mb-4">
+        <h1 class="text-xl font-bold">Sistem Absen + Gaji - <span id="namaUsaha">...</span></h1>
+        <p class="text-sm text-gray-500">Lisensi: <span id="kodeLisensi">...</span> | Aktif sampai: <span id="tglExpired">...</span></p>
+    </div>
+
+    <!-- TAB NAV -->
+    <div class="flex gap-2 mb-4">
+        <button onclick="gantiTab('absen')" id="btnAbsen" class="tab-btn bg-blue-600 text-white px-4 py-2 rounded">Absen</button>
+        <button onclick="gantiTab('rekap')" id="btnRekap" class="tab-btn bg-gray-300 px-4 py-2 rounded">Rekap Harian</button>
+        <button onclick="gantiTab('gaji')" id="btnGaji" class="tab-btn bg-gray-300 px-4 py-2 rounded">Gaji Bulanan</button>
+        <button onclick="gantiTab('setting')" id="btnSetting" class="tab-btn bg-gray-300 px-4 py-2 rounded">Setting</button>
+    </div>
+
+    <!-- TAB 1: ABSEN -->
+    <div id="tabAbsen" class="tab-content bg-white rounded-lg shadow p-4">
+        <h2 class="font-bold mb-3">Absen Karyawan</h2>
+        <select id="pilihKaryawan" class="w-full border rounded p-2 mb-3"></select>
+        <video id="video" class="w-full rounded bg-black mb-3" autoplay playsinline></video>
+        <canvas id="canvas" class="hidden"></canvas>
+        <button id="btnAbsenMasuk" onclick="prosesAbsen('masuk')" class="w-full bg-green-600 text-white py-3 rounded font-bold mb-2">ABSEN MASUK</button>
+        <button id="btnAbsenPulang" onclick="prosesAbsen('pulang')" class="w-full bg-red-600 text-white py-3 rounded font-bold hidden">ABSEN PULANG</button>
+        <p id="statusAbsen" class="text-sm text-center mt-2 text-gray-600"></p>
+    </div>
+
+    <!-- TAB 2: REKAP -->
+    <div id="tabRekap" class="tab-content bg-white rounded-lg shadow p-4 hidden">
+        <h2 class="font-bold mb-3">Rekap Absen Hari Ini - <span id="tglHariIni"></span></h2>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-100">
+                    <tr><th class="p-2 text-left">Nama</th><th>Masuk</th><th>Pulang</th><th>Status</th><th>Telat</th><th>Foto</th></tr>
+                </thead>
+                <tbody id="tabelRekap"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- TAB 3: GAJI -->
+    <div id="tabGaji" class="tab-content bg-white rounded-lg shadow p-4 hidden">
+        <h2 class="font-bold mb-3">Hitung Gaji Bulanan</h2>
+        <div class="flex gap-2 mb-3">
+            <select id="pilihKaryawanGaji" class="border rounded p-2 flex-1"></select>
+            <input type="month" id="pilihBulan" class="border rounded p-2">
+            <button onclick="hitungGaji()" class="bg-blue-600 text-white px-4 rounded">Hitung</button>
+        </div>
+        <div id="hasilGaji" class="border rounded p-3 bg-gray-50 hidden">
+            <h3 class="font-bold mb-2">Slip Gaji - <span id="namaKaryawanGaji"></span></h3>
+            <div id="rincianGaji" class="text-sm space-y-1"></div>
+            <button onclick="window.print()" class="mt-3 bg-green-600 text-white px-3 py-1 rounded text-sm">Print / PDF</button>
+        </div>
+        <div class="mt-6 border-t pt-3">
+            <h3 class="font-bold mb-2">Catat Kasbon</h3>
+            <div class="flex gap-2">
+                <select id="pilihKaryawanKasbon" class="border rounded p-2 flex-1"></select>
+                <input type="number" id="jumlahKasbon" placeholder="Jumlah" class="border rounded p-2 w-32">
+                <button onclick="tambahKasbon()" class="bg-orange-600 text-white px-3 rounded">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 4: SETTING -->
+    <div id="tabSetting" class="tab-content bg-white rounded-lg shadow p-4 hidden">
+        <h2 class="font-bold mb-3">Setting Usaha & Karyawan</h2>
+        <div class="grid grid-cols-2 gap-3 text-sm">
+            <div><label>Gaji Harian</label><input id="setGajiHarian" type="number" class="w-full border rounded p-2"></div>
+            <div><label>Denda Telat/menit</label><input id="setDendaTelat" type="number" class="w-full border rounded p-2"></div>
+            <div><label>Upah Lembur/jam</label><input id="setUpahLembur" type="number" class="w-full border rounded p-2"></div>
+            <div><label>Jam Kerja Standar</label><input id="setJamKerja" type="number" class="w-full border rounded p-2"></div>
+        </div>
+        <button onclick="simpanSetting()" class="mt-3 bg-blue-600 text-white px-4 py-2 rounded">Simpan Setting</button>
+        
+        <h3 class="font-bold mt-6 mb-2">Data Karyawan</h3>
+        <div id="listKaryawan" class="space-y-2"></div>
+        <div class="flex gap-2 mt-2">
+            <input id="namaKaryawanBaru" placeholder="Nama" class="border rounded p-2 flex-1">
+            <input id="jamMasukBaru" type="time" class="border rounded p-2">
+            <input id="jamPulangBaru" type="time" class="border rounded p-2">
+            <button onclick="tambahKaryawan()" class="bg-green-600 text-white px-3 rounded">+</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ===== 1. DATABASE =====
+let DB = JSON.parse(localStorage.getItem('DB_ABSEN')) || {
+    settings: {
+        NAMA_USAHA: "CAFE GEN Z",
+        KODE_LISENSI: "GEN-GAJ-01",
+        TANGGAL_AKTIFASI: "2026-05-03",
+        MASA_SEWA_HARI: 30,
+        GAJI_HARIAN: 80000,
+        DENDA_TELAT_PER_MENIT: 500,
+        UPAH_LEMBUR_PER_JAM: 15000,
+        JAM_KERJA_STANDAR: 8
+    },
+    karyawan: [
+        { id: 1, nama: "Budi", jamMasuk: "08:00", jamPulang: "16:00" },
+        { id: 2, nama: "Sari", jamMasuk: "16:00", jamPulang: "00:00" }
+    ],
+    absensi: [],
+    kasbon: []
+};
+
+const simpanDB = () => localStorage.setItem('DB_ABSEN', JSON.stringify(DB));
+
+// ===== 2. SISTEM SEWA / KUNCI =====
+function cekSewa() {
+    const { TANGGAL_AKTIFASI, MASA_SEWA_HARI, KODE_LISENSI } = DB.settings;
+    const tglExpired = new Date(TANGGAL_AKTIFASI);
+    tglExpired.setDate(tglExpired.getDate() + MASA_SEWA_HARI);
+    
+    document.getElementById('tglExpired').textContent = tglExpired.toLocaleDateString('id-ID');
+    document.getElementById('kodeLisensi').textContent = KODE_LISENSI;
+    document.getElementById('namaUsaha').textContent = DB.settings.NAMA_USAHA;
+    
+    if (new Date() > tglExpired) {
+        document.getElementById('app').classList.add('kunci');
+        document.getElementById('popupKunci').classList.remove('hidden');
+        document.getElementById('kodeLisensiPopup').textContent = KODE_LISENSI;
+        return false;
+    }
+    return true;
+}
+
+// ===== 3. KAMERA =====
+let stream;
+async function initKamera() {
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+        document.getElementById('video').srcObject = stream;
+    } catch (err) {
+        alert('Gagal akses kamera: ' + err);
+    }
+}
+
+function captureFoto() {
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    return canvas.toDataURL('image/jpeg', 0.5);
+}
+
+// ===== 4. ABSEN MASUK/PULANG =====
+function prosesAbsen(tipe) {
+    const idKaryawan = parseInt(document.getElementById('pilihKaryawan').value);
+    if (!idKaryawan) return alert('Pilih karyawan dulu');
+    
+    navigator.geolocation.getCurrentPosition((pos) => {
+        const { latitude, longitude } = pos.coords;
+        const foto = captureFoto();
+        const now = new Date();
+        const tgl = now.toISOString().slice(0,10);
+        const jam = now.toTimeString().slice(0,8);
+        
+        let absenHariIni = DB.absensi.find(a => a.idKaryawan == idKaryawan && a.tanggal == tgl);
+        
+        if (tipe == 'masuk') {
+            if (absenHariIni) return alert('Sudah absen masuk hari ini');
+            const karyawan = DB.karyawan.find(k => k.id == idKaryawan);
+            const telatMenit = hitungTelat(jam, karyawan.jamMasuk);
+            DB.absensi.push({
+                id: Date.now(), idKaryawan, tanggal: tgl, jamMasuk: jam,
+                fotoMasuk: foto, lat: latitude, lng: longitude,
+                status: telatMenit > 0 ? 'Telat' : 'Hadir', telatMenit: telatMenit
+            });
+        } else {
+            if (!absenHariIni) return alert('Belum absen masuk');
+            if (absenHariIni.jamPulang) return alert('Sudah absen pulang');
+            absenHariIni.jamPulang = jam;
+            absenHariIni.fotoPulang = foto;
+        }
+        
+        simpanDB();
+        updateTampilanAbsen();
+        renderRekap();
+        document.getElementById('statusAbsen').textContent = `Berhasil absen ${tipe} jam ${jam}`;
+    }, () => alert('Gagal ambil lokasi. Aktifkan GPS'));
+}
+
+function hitungTelat(jamMasuk, jamShift) {
+    const [jM, mM] = jamMasuk.split(':').map(Number);
+    const [jS, mS] = jamShift.split(':').map(Number);
+    const menitMasuk = jM * 60 + mM;
+    const menitShift = jS * 60 + mS;
+    return menitMasuk > menitShift ? menitMasuk - menitShift : 0;
+}
+
+function updateTampilanAbsen() {
+    const idKaryawan = parseInt(document.getElementById('pilihKaryawan').value);
+    const tgl = new Date().toISOString().slice(0,10);
+    const absen = DB.absensi.find(a => a.idKaryawan == idKaryawan && a.tanggal == tgl);
+    
+    if (absen && !absen.jamPulang) {
+        document.getElementById('btnAbsenMasuk').classList.add('hidden');
+        document.getElementById('btnAbsenPulang').classList.remove('hidden');
+    } else {
+        document.getElementById('btnAbsenMasuk').classList.remove('hidden');
+        document.getElementById('btnAbsenPulang').classList.add('hidden');
+    }
+}
+
+// ===== 5. REKAP HARIAN =====
+function renderRekap() {
+    const tgl = new Date().toISOString().slice(0,10);
+    document.getElementById('tglHariIni').textContent = new Date().toLocaleDateString('id-ID');
+    const tbody = document.getElementById('tabelRekap');
+    tbody.innerHTML = '';
+    
+    DB.karyawan.forEach(k => {
+        const absen = DB.absensi.find(a => a.idKaryawan == k.id && a.tanggal == tgl);
+        tbody.innerHTML += `
+            <tr class="border-b">
+                <td class="p-2">${k.nama}</td>
+                <td class="text-center">${absen?.jamMasuk || '-'}</td>
+                <td class="text-center">${absen?.jamPulang || '-'}</td>
+                <td class="text-center">${absen?.status || 'Alpha'}</td>
+                <td class="text-center">${absen?.telatMenit || 0} mnt</td>
+                <td class="text-center">${absen ? `<img src="${absen.fotoMasuk}" class="w-8 h-8 rounded mx-auto">` : '-'}</td>
+            </tr>
+        `;
+    });
+}
+
+// ===== 6. HITUNG GAJI =====
+function hitungGaji() {
+    const idKaryawan = parseInt(document.getElementById('pilihKaryawanGaji').value);
+    const [tahun, bulan] = document.getElementById('pilihBulan').value.split('-').map(Number);
+    if (!idKaryawan || !bulan) return alert('Pilih karyawan & bulan');
+    
+    const karyawan = DB.karyawan.find(k => k.id == idKaryawan);
+    const absenBulanIni = DB.absensi.filter(a => {
+        const d = new Date(a.tanggal);
+        return a.idKaryawan == idKaryawan && d.getMonth()+1 == bulan && d.getFullYear() == tahun;
+    });
+    
+    const kasbonBulanIni = DB.kasbon.filter(k => {
+        const d = new Date(k.tanggal);
+        return k.idKaryawan == idKaryawan && d.getMonth()+1 == bulan && d.getFullYear() == tahun;
+    });
+    
+    let hariKerja = absenBulanIni.filter(a => a.status != 'Alpha').length;
+    let totalTelatMenit = absenBulanIni.reduce((sum, a) => sum + (a.telatMenit || 0), 0);
+    let totalJamLembur = 0;
+    
+    absenBulanIni.forEach(a => {
+        if (a.jamPulang && a.jamMasuk) {
+            const jamKerja = (new Date(`2000-01-01 ${a.jamPulang}`) - new Date(`2000-01-01 ${a.jamMasuk}`)) / 3600000;
+            if (jamKerja > DB.settings.JAM_KERJA_STANDAR) {
+                totalJamLembur += jamKerja - DB.settings.JAM_KERJA_STANDAR;
+            }
+        }
+    });
+    
+    const gajiKotor = hariKerja * DB.settings.GAJI_HARIAN;
+    const totalDenda = totalTelatMenit * DB.settings.DENDA_TELAT_PER_MENIT;
+    const totalLembur = Math.floor(totalJamLembur) * DB.settings.UPAH_LEMBUR_PER_JAM;
+    const totalKasbon = kasbonBulanIni.reduce((sum, k) => sum + k.jumlah, 0);
+    const gajiBersih = gajiKotor - totalDenda - totalKasbon + totalLembur;
+    
+    document.getElementById('namaKaryawanGaji').textContent = karyawan.nama;
+    document.getElementById('rincianGaji').innerHTML = `
+        <div class="flex justify-between"><span>Hari Kerja:</span><span>${hariKerja} hari</span></div>
+        <div class="flex justify-between"><span>Gaji Pokok:</span><span>Rp ${gajiKotor.toLocaleString('id-ID')}</span></div>
+        <div class="flex justify-between text-red-600"><span>Denda Telat ${totalTelatMenit} mnt:</span><span>- Rp ${totalDenda.toLocaleString('id-ID')}</span></div>
+        <div class="flex justify-between text-red-600"><span>Kasbon:</span><span>- Rp ${totalKasbon.toLocaleString('id-ID')}</span></div>
+        <div class="flex justify-between text-green-600"><span>Lembur ${Math.floor(totalJamLembur)} jam:</span><span>+ Rp ${totalLembur.toLocaleString('id-ID')}</span></div>
+        <div class="flex justify-between font-bold border-t pt-1 mt-1"><span>GAJI BERSIH:</span><span>Rp ${gajiBersih.toLocaleString('id-ID')}</span></div>
+    `;
+    document.getElementById('hasilGaji').classList.remove('hidden');
+}
+
+function tambahKasbon() {
+    const idKaryawan = parseInt(document.getElementById('pilihKaryawanKasbon').value);
+    const jumlah = parseInt(document.getElementById('jumlahKasbon').value);
+    if (!idKaryawan || !jumlah) return alert('Lengkapi data');
+    DB.kasbon.push({ id: Date.now(), idKaryawan, tanggal: new Date().toISOString().slice(0,10), jumlah });
+    simpanDB();
+    document.getElementById('jumlahKasbon').value = '';
+    alert('Kasbon tersimpan');
+}
+
+// ===== 7. SETTING & KARYAWAN =====
+function renderSetting() {
+    document.getElementById('setGajiHarian').value = DB.settings.GAJI_HARIAN;
+    document.getElementById('setDendaTelat').value = DB.settings.DENDA_TELAT_PER_MENIT;
+    document.getElementById('setUpahLembur').value = DB.settings.UPAH_LEMBUR_PER_JAM;
+    document.getElementById('setJamKerja').value = DB.settings.JAM_KERJA_STANDAR;
+    
+    const list = document.getElementById('listKaryawan');
+    list.innerHTML = DB.karyawan.map(k => `
+        <div class="flex justify-between items-center border rounded p-2">
+            <span>${k.nama} | ${k.jamMasuk}-${k.jamPulang}</span>
+            <button onclick="hapusKaryawan(${k.id})" class="text-red-600 text-sm">Hapus</button>
+        </div>
+    `).join('');
+}
+
+function simpanSetting() {
+    DB.settings.GAJI_HARIAN = parseInt(document.getElementById('setGajiHarian').value);
+    DB.settings.DENDA_TELAT_PER_MENIT = parseInt(document.getElementById('setDendaTelat').value);
+    DB.settings.UPAH_LEMBUR_PER_JAM = parseInt(document.getElementById('setUpahLembur').value);
+    DB.settings.JAM_KERJA_STANDAR = parseInt(document.getElementById('setJamKerja').value);
+    simpanDB();
+    alert('Setting tersimpan');
+}
+
+function tambahKaryawan() {
+    const nama = document.getElementById('namaKaryawanBaru').value;
+    const jamMasuk = document.getElementById('jamMasukBaru').value;
+    const jamPulang = document.getElementById('jamPulangBaru').value;
+    if (!nama || !jamMasuk || !jamPulang) return alert('Lengkapi data');
+    DB.karyawan.push({ id: Date.now(), nama, jamMasuk, jamPulang });
+    simpanDB();
+    renderSetting();
+    loadDropdownKaryawan();
+}
+
+function hapusKaryawan(id) {
+    if (confirm('Hapus karyawan?')) {
+        DB.karyawan = DB.karyawan.filter(k => k.id != id);
+        simpanDB();
+        renderSetting();
+        loadDropdownKaryawan();
+    }
+}
+
+// ===== 8. UI HELPER =====
+function gantiTab(nama) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+    document.querySelectorAll('.tab-btn').forEach(el => {
+        el.classList.remove('bg-blue-600', 'text-white');
+        el.classList.add('bg-gray-300');
+    });
+    document.getElementById('tab' + nama.charAt(0).toUpperCase() + nama.slice(1)).classList.remove('hidden');
+    document.getElementById('btn' + nama.charAt(0).toUpperCase() + nama.slice(1)).classList.add('bg-blue-600', 'text-white');
+    document.getElementById('btn' + nama.charAt(0).toUpperCase() + nama.slice(1)).classList.remove('bg-gray-300');
+}
+
+function loadDropdownKaryawan() {
+    const opsi = DB.karyawan.map(k => `<option value="${k.id}">${k.nama}</option>`).join('');
+    ['pilihKaryawan', 'pilihKaryawanGaji', 'pilihKaryawanKasbon'].forEach(id => {
+        document.getElementById(id).innerHTML = '<option value="">Pilih Karyawan</option>' + opsi;
+    });
+}
+
+// ===== 9. INIT =====
+window.onload = () => {
+    if (!cekSewa()) return;
+    initKamera();
+    loadDropdownKaryawan();
+    renderRekap();
+    renderSetting();
+    document.getElementById('pilihKaryawan').addEventListener('change', updateTampilanAbsen);
+    document.getElementById('pilihBulan').value = new Date().toISOString().slice(0,7);
+};
+</script>
+</body>
+                                                                                                        </html>
