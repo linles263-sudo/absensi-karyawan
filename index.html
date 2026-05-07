@@ -20,7 +20,7 @@
 </head>
 <body class="text-slate-800">
 
-<!-- POPUP KUNCI -->
+<!-- POPUP KUNCI SEWA -->
 <div id="popupKunci" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
     <div class="card rounded-2xl p-8 max-w-sm text-center">
         <i class="fa-solid fa-lock text-5xl text-red-500 mb-4"></i>
@@ -30,27 +30,49 @@
     </div>
 </div>
 
+<!-- POPUP LOGIN BOS -->
+<div id="popupLogin" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+    <div class="card rounded-2xl p-6 max-w-sm w-full">
+        <h1 class="text-xl font-bold text-green-600 mb-4"><i class="fa-solid fa-user-shield mr-2"></i>Login Bos</h1>
+        <input type="password" id="inputPin" placeholder="Masukkan PIN Bos" class="w-full bg-slate-100 border border-slate-300 rounded-xl p-3 mb-4 text-slate-800">
+        <div class="flex gap-2">
+            <button onclick="tutupLogin()" class="flex-1 bg-slate-200 text-slate-700 py-2 rounded-xl font-semibold">Batal</button>
+            <button onclick="prosesLogin()" class="flex-1 bg-green-600 text-white py-2 rounded-xl font-semibold">Masuk</button>
+        </div>
+        <p id="errorPin" class="text-red-500 text-sm mt-2 hidden">PIN Salah!</p>
+    </div>
+</div>
+
 <div id="app" class="max-w-4xl mx-auto p-4 min-h-screen">
     <!-- HEADER -->
     <div class="header-gradient rounded-2xl p-5 mb-6 shadow-lg">
-        <div class="flex items-center gap-3">
-            <img src="https://via.placeholder.com/50x50/ffffff/10b981?text=LOGO" class="w-12 h-12 rounded-xl bg-white p-1">
-            <div>
-                <h1 class="text-2xl font-bold text-white" id="judulUtama">Absen Pro UMKM</h1>
-                <p class="text-sm text-green-100" id="infoLisensi">Selamat bekerja!</p>
+        <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-white p-1 text-2xl flex items-center justify-center">☕</div>
+                <div>
+                    <h1 class="text-2xl font-bold text-white" id="judulUtama">Absen Pro UMKM</h1>
+                    <p class="text-sm text-green-100" id="infoLisensi">Selamat bekerja!</p>
+                </div>
             </div>
+            <!-- TOMBOL LOGIN BOS -->
+            <button id="btnLoginBos" onclick="bukaLogin()" class="bg-white/20 text-white px-4 py-2 rounded-xl text-sm font-semibold no-print">
+                <i class="fa-solid fa-user-shield mr-1"></i>Login Bos
+            </button>
+            <button id="btnLogout" onclick="logout()" class="bg-red-500/80 text-white px-4 py-2 rounded-xl text-sm font-semibold no-print hidden">
+                <i class="fa-solid fa-right-from-bracket mr-1"></i>Logout
+            </button>
         </div>
     </div>
 
     <!-- TAB NAV -->
     <div id="tabNav" class="flex gap-2 mb-6 overflow-x-auto no-print">
         <button onclick="gantiTab('absen')" id="btnAbsen" class="tab-btn bg-green-600 text-white px-5 py-2 rounded-xl font-semibold whitespace-nowrap"><i class="fa-solid fa-camera mr-2"></i>Absen</button>
-        <button onclick="gantiTab('rekap')" id="btnRekap" class="tab-btn card px-5 py-2 rounded-xl font-semibold whitespace-nowrap"><i class="fa-solid fa-list-check mr-2"></i>Rekap Bos</button>
-        <button onclick="gantiTab('gaji')" id="btnGaji" class="tab-btn card px-5 py-2 rounded-xl font-semibold whitespace-nowrap"><i class="fa-solid fa-money-bill-wave mr-2"></i>Gaji</button>
-        <button onclick="gantiTab('setting')" id="btnSetting" class="tab-btn card px-5 py-2 rounded-xl font-semibold whitespace-nowrap"><i class="fa-solid fa-gear mr-2"></i>Setting</button>
+        <button onclick="gantiTab('rekap')" id="btnRekap" class="tab-btn card px-5 py-2 rounded-xl font-semibold whitespace-nowrap hidden"><i class="fa-solid fa-list-check mr-2"></i>Rekap Bos</button>
+        <button onclick="gantiTab('gaji')" id="btnGaji" class="tab-btn card px-5 py-2 rounded-xl font-semibold whitespace-nowrap hidden"><i class="fa-solid fa-money-bill-wave mr-2"></i>Gaji</button>
+        <button onclick="gantiTab('setting')" id="btnSetting" class="tab-btn card px-5 py-2 rounded-xl font-semibold whitespace-nowrap hidden"><i class="fa-solid fa-gear mr-2"></i>Setting</button>
     </div>
 
-    <!-- TAB 1: ABSEN -->
+    <!-- TAB 1: ABSEN - SELALU MUNCUL -->
     <div id="tabAbsen" class="tab-content card rounded-2xl p-6">
         <h2 class="font-bold text-lg mb-4"><i class="fa-solid fa-user-clock text-green-600 mr-2"></i>Absen Hari Ini</h2>
         <select id="pilihKaryawan" class="w-full bg-slate-100 border border-slate-300 rounded-xl p-3 mb-4 text-slate-800"></select>
@@ -63,7 +85,6 @@
                 <p class="text-sm">Kamera/GPS gagal. Klik tombol di bawah untuk izinkan</p>
                 <button onclick="initKamera()" class="mt-3 bg-green-600 text-white px-4 py-2 rounded-lg text-sm">Coba Lagi</button>
             </div>
-        </div>
         <canvas id="canvas" class="hidden"></canvas>
         
         <button id="btnAbsenMasuk" onclick="prosesAbsen('masuk')" class="w-full btn-gradient-green text-white py-4 rounded-xl font-bold text-lg mb-2 disabled:opacity-50 disabled:cursor-not-allowed"><i class="fa-solid fa-right-to-bracket mr-2"></i>ABSEN MASUK</button>
@@ -71,7 +92,7 @@
         <p id="statusAbsen" class="text-sm text-center mt-3 text-slate-500"></p>
     </div>
 
-    <!-- TAB 2: REKAP BOS -->
+    <!-- TAB 2: REKAP BOS - HANYA MUNCUL KALO LOGIN -->
     <div id="tabRekap" class="tab-content card rounded-2xl p-6 hidden">
         <div class="flex justify-between items-center mb-4">
             <h2 class="font-bold text-lg"><i class="fa-solid fa-calendar-day text-green-600 mr-2"></i>Rekap <span id="tglHariIni"></span></h2>
@@ -88,7 +109,7 @@
         </div>
     </div>
 
-    <!-- TAB 3: GAJI -->
+    <!-- TAB 3: GAJI - HANYA MUNCUL KALO LOGIN -->
     <div id="tabGaji" class="tab-content card rounded-2xl p-6 hidden">
         <h2 class="font-bold text-lg mb-4"><i class="fa-solid fa-file-invoice-dollar text-green-600 mr-2"></i>Slip Gaji Bulanan</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4 no-print">
@@ -111,7 +132,7 @@
         </div>
     </div>
 
-    <!-- TAB 4: SETTING -->
+    <!-- TAB 4: SETTING - HANYA MUNCUL KALO LOGIN -->
     <div id="tabSetting" class="tab-content card rounded-2xl p-6 hidden">
         <h2 class="font-bold text-lg mb-4"><i class="fa-solid fa-sliders text-green-600 mr-2"></i>Setting Gaji & Karyawan</h2>
         <div class="grid grid-cols-2 gap-4 text-sm mb-6">
@@ -119,6 +140,7 @@
             <div><label class="text-slate-500">Denda/menit</label><input id="setDendaTelat" type="number" class="w-full bg-slate-100 border border-slate-300 rounded-lg p-2 mt-1 text-slate-800"></div>
             <div><label class="text-slate-500">Lembur/jam</label><input id="setUpahLembur" type="number" class="w-full bg-slate-100 border border-slate-300 rounded-lg p-2 mt-1 text-slate-800"></div>
             <div><label class="text-slate-500">Jam Kerja</label><input id="setJamKerja" type="number" class="w-full bg-slate-100 border border-slate-300 rounded-lg p-2 mt-1 text-slate-800"></div>
+            <div><label class="text-slate-500">PIN Bos Baru</label><input id="setPinBaru" type="password" placeholder="Kosongkan jika tidak ganti" class="w-full bg-slate-100 border border-slate-300 rounded-lg p-2 mt-1 text-slate-800"></div>
         </div>
         <button onclick="simpanSetting()" class="w-full bg-green-600 text-white py-3 rounded-xl font-semibold mb-6">Simpan Setting</button>
         
@@ -133,31 +155,65 @@
 </div>
 
 <script>
-// ===== 1. KONFIGURASI UTAMA - EDIT BAGIAN INI BUAT JUALAN =====
+// ===== 1. KONFIGURASI - GANTI SINI BUAT JUALAN =====
 let DB = JSON.parse(localStorage.getItem('DB_ABSEN_PRO')) || {
     settings: { 
         NAMA_USAHA:"KOPI JANJI HATI PAKISAJI", // GANTI NAMA USAHA CLIENT
         KODE_LISENSI:"ABS-KJH-01", // GANTI KODE UNIK PER CLIENT
         TANGGAL_AKTIFASI:"2026-05-07", // GANTI TANGGAL JUALAN
-        MASA_SEWA_HARI:30, // GANTI MASA SEWA
+        MASA_SEWA_HARI:30, 
         GAJI_HARIAN:80000, 
         DENDA_TELAT_PER_MENIT:500, 
         UPAH_LEMBUR_PER_JAM:15000, 
         JAM_KERJA_STANDAR:8, 
-        PIN_ADMIN:"1234" // GANTI PIN ADMIN BIAR AMAN
+        PIN_ADMIN:"1234" // GANTI PIN BOS. KASIH TAU KE BOS DOANG
     },
     karyawan: [{id:1,nama:"Budi",jamMasuk:"08:00",jamPulang:"16:00"}, {id:2,nama:"Sari",jamMasuk:"16:00",jamPulang:"00:00"}],
     absensi: [], kasbon: []
 };
 const simpanDB = () => localStorage.setItem('DB_ABSEN_PRO', JSON.stringify(DB));
 
-// ===== 2. MODE KARYAWAN VS ADMIN =====
-let isAdmin = false, kameraSiap = false, gpsSiap = false, stream;
-function cekMode() {
-    isAdmin = new URLSearchParams(window.location.search).get('mode') === 'admin';
+// ===== 2. SISTEM LOGIN BOS - 1 LINK UNTUK SEMUA =====
+let isAdmin = sessionStorage.getItem('isAdmin') === 'true'; // Pake session biar logout kalo close tab
+function bukaLogin() { document.getElementById('popupLogin').classList.remove('hidden'); }
+function tutupLogin() { 
+    document.getElementById('popupLogin').classList.add('hidden'); 
+    document.getElementById('inputPin').value = '';
+    document.getElementById('errorPin').classList.add('hidden');
+}
+function prosesLogin() {
+    const pin = document.getElementById('inputPin').value;
+    if (pin === DB.settings.PIN_ADMIN) {
+        isAdmin = true;
+        sessionStorage.setItem('isAdmin', 'true');
+        tutupLogin();
+        updateTampilanMode();
+        gantiTab('rekap'); // Langsung ke rekap setelah login
+    } else {
+        document.getElementById('errorPin').classList.remove('hidden');
+    }
+}
+function logout() {
+    isAdmin = false;
+    sessionStorage.removeItem('isAdmin');
+    updateTampilanMode();
+    gantiTab('absen');
+}
+function updateTampilanMode() {
+    // Update judul & tombol
     document.getElementById('judulUtama').textContent = isAdmin ? DB.settings.NAMA_USAHA + ' - Dashboard Bos' : 'Absen ' + DB.settings.NAMA_USAHA;
-    if (!isAdmin) {
-        ['btnRekap','btnGaji','btnSetting'].forEach(id => document.getElementById(id).style.display = 'none');
+    document.getElementById('btnLoginBos').classList.toggle('hidden', isAdmin);
+    document.getElementById('btnLogout').classList.toggle('hidden', !isAdmin);
+    
+    // Show/hide menu bos
+    ['btnRekap','btnGaji','btnSetting'].forEach(id => {
+        document.getElementById(id).classList.toggle('hidden', !isAdmin);
+    });
+    
+    if (isAdmin) {
+        document.getElementById('infoLisensi').innerHTML = `Mode Bos | Lisensi: ${DB.settings.KODE_LISENSI}`;
+        renderRekap(); renderSetting();
+    } else {
         document.getElementById('infoLisensi').textContent = 'Selamat bekerja!';
     }
 }
@@ -166,7 +222,6 @@ function cekMode() {
 function cekSewa() {
     const { TANGGAL_AKTIFASI, MASA_SEWA_HARI, KODE_LISENSI } = DB.settings;
     const tglExpired = new Date(TANGGAL_AKTIFASI); tglExpired.setDate(tglExpired.getDate() + MASA_SEWA_HARI);
-    if(isAdmin) document.getElementById('infoLisensi').innerHTML = `Lisensi: ${KODE_LISENSI} | Aktif s/d: ${tglExpired.toLocaleDateString('id-ID')}`;
     if (new Date() > tglExpired) {
         document.getElementById('app').classList.add('kunci');
         document.getElementById('popupKunci').classList.remove('hidden');
@@ -177,6 +232,7 @@ function cekSewa() {
 }
 
 // ===== 4. KAMERA + GPS =====
+let kameraSiap = false, gpsSiap = false, stream;
 async function initKamera() {
     document.getElementById('errorKamera').classList.add('hidden');
     document.getElementById('statusAbsen').textContent = 'Meminta izin kamera & GPS...';
@@ -217,7 +273,8 @@ function prosesAbsen(tipe) {
             if (!absen || absen.jamPulang) return alert('Belum absen masuk / sudah pulang');
             absen.jamPulang = jam; absen.fotoPulang = foto;
         }
-        simpanDB(); updateTampilanAbsen(); renderRekap();
+        simpanDB(); updateTampilanAbsen(); 
+        if(isAdmin) renderRekap();
         document.getElementById('statusAbsen').textContent = `Berhasil absen ${tipe} jam ${jam}`;
     });
 }
@@ -256,19 +313,10 @@ function renderRekap() {
         </tr>`;
     }).join('');
     
-    // ALERT BUAT BOS
     if(totalTelat > 0 || totalAlpha > 0) {
-        document.getElementById('alertBos').innerHTML = `
-        <div class="bg-red-50 border border-red-200 text-red-700 p-3 rounded-xl mb-4">
-            <i class="fa-solid fa-triangle-exclamation mr-2"></i>
-            <b>Perhatian Bos:</b> Hari ini ${totalTelat} karyawan telat, ${totalAlpha} belum absen
-        </div>`;
+        document.getElementById('alertBos').innerHTML = `<div class="bg-red-50 border border-red-200 text-red-700 p-3 rounded-xl mb-4"><i class="fa-solid fa-triangle-exclamation mr-2"></i><b>Perhatian Bos:</b> Hari ini ${totalTelat} karyawan telat, ${totalAlpha} belum absen</div>`;
     } else {
-        document.getElementById('alertBos').innerHTML = `
-        <div class="bg-green-50 border border-green-200 text-green-700 p-3 rounded-xl mb-4">
-            <i class="fa-solid fa-circle-check mr-2"></i>
-            <b>Mantap Bos:</b> Semua karyawan masuk tepat waktu hari ini
-        </div>`;
+        document.getElementById('alertBos').innerHTML = `<div class="bg-green-50 border border-green-200 text-green-700 p-3 rounded-xl mb-4"><i class="fa-solid fa-circle-check mr-2"></i><b>Mantap Bos:</b> Semua karyawan masuk tepat waktu hari ini</div>`;
     }
 }
 function exportExcel() {
@@ -324,7 +372,9 @@ function simpanSetting() {
     DB.settings.DENDA_TELAT_PER_MENIT = parseInt(document.getElementById('setDendaTelat').value);
     DB.settings.UPAH_LEMBUR_PER_JAM = parseInt(document.getElementById('setUpahLembur').value);
     DB.settings.JAM_KERJA_STANDAR = parseInt(document.getElementById('setJamKerja').value);
-    simpanDB(); alert('Setting tersimpan');
+    const pinBaru = document.getElementById('setPinBaru').value;
+    if (pinBaru) DB.settings.PIN_ADMIN = pinBaru;
+    simpanDB(); alert('Setting tersimpan'); document.getElementById('setPinBaru').value = '';
 }
 function tambahKaryawan() {
     const nama = document.getElementById('namaKaryawanBaru').value, jamMasuk = document.getElementById('jamMasukBaru').value;
@@ -343,11 +393,7 @@ function hapusKaryawan(id) {
 
 // ===== 6. UI HELPER =====
 function gantiTab(nama) {
-    if (!isAdmin && nama !== 'absen') return;
-    if (isAdmin && (nama==='rekap'||nama==='gaji'||nama==='setting')) {
-        const pin = prompt('Masukkan PIN Admin:');
-        if (pin !== DB.settings.PIN_ADMIN) return alert('PIN Salah');
-    }
+    if (!isAdmin && nama !== 'absen') return; // Karyawan gak bisa buka tab lain
     document.querySelectorAll('.tab-content').forEach(el=>el.classList.add('hidden'));
     document.querySelectorAll('.tab-btn').forEach(el=>{el.classList.remove('bg-green-600','text-white'); el.classList.add('card');});
     document.getElementById('tab'+nama.charAt(0).toUpperCase()+nama.slice(1)).classList.remove('hidden');
@@ -364,9 +410,12 @@ function loadDropdownKaryawan() {
 // ===== 7. INIT =====
 window.onload = () => {
     if (!cekSewa()) return;
-    cekMode(); initKamera(); loadDropdownKaryawan(); renderRekap(); renderSetting();
+    updateTampilanMode(); // Cek login apa enggak
+    initKamera(); 
+    loadDropdownKaryawan(); 
     document.getElementById('pilihKaryawan').addEventListener('change', updateTampilanAbsen);
     document.getElementById('pilihBulan').value = new Date().toISOString().slice(0,7);
+    gantiTab('absen'); // Default buka tab absen
 };
 </script>
 </body>
